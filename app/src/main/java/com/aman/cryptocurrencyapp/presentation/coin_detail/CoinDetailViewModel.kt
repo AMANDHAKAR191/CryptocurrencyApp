@@ -4,11 +4,13 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.aman.cryptocurrencyapp.comman.Constraints
 import com.aman.cryptocurrencyapp.comman.Resource
 import com.aman.cryptocurrencyapp.domain.use_cases.get_coin.GetCoinUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -26,20 +28,23 @@ class CoinDetailViewModel @Inject constructor(
     }
 
     private fun getCoin(coinId: String) {
-        getCoinUseCase(coinId).onEach { result ->
-            when (result) {
-                is Resource.Success -> {
-                    _state.value = CoinDetailState(coin = result.data)
-                }
+        viewModelScope.launch{
+            getCoinUseCase(coinId).collect { result ->
+                when (result) {
+                    is Resource.Success -> {
+                        _state.value = CoinDetailState(coin = result.data)
+                    }
 
-                is Resource.Error -> {
-                    _state.value = CoinDetailState(error = "An unexpected error occurred.")
-                }
+                    is Resource.Error -> {
+                        _state.value = CoinDetailState(error = "An unexpected error occurred.")
+                    }
 
-                is Resource.Loading -> {
-                    _state.value = CoinDetailState(isLoading = true)
+                    is Resource.Loading -> {
+                        _state.value = CoinDetailState(isLoading = true)
+                    }
                 }
             }
         }
+
     }
 }
